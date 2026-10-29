@@ -8,8 +8,8 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:"Comic Sans MS","Trebuchet MS",sans-serif;background:#fff6d6;color:#2b2b2b;text-align:center}
 h1{margin:12px 0 6px;font-size:26px}
-.tabs{display:flex;gap:6px;justify-content:center;padding:6px}
-.tabs button{flex:1;max-width:140px;padding:12px 4px;font-size:16px;border:3px solid #ff9f1c;background:#fff;border-radius:16px;font-family:inherit;font-weight:bold}
+.tabs{display:flex;gap:5px;justify-content:center;padding:6px}
+.tabs button{flex:1;max-width:100px;padding:12px 2px;font-size:14px;border:3px solid #ff9f1c;background:#fff;border-radius:16px;font-family:inherit;font-weight:bold}
 .tabs button.on{background:#ff9f1c;color:#fff}
 .game{display:none;padding:10px 14px 40px;max-width:480px;margin:0 auto}
 .game.on{display:block}
@@ -18,6 +18,7 @@ h1{margin:12px 0 6px;font-size:26px}
 .emoji{font-size:80px;line-height:1.1}
 .btn{display:block;width:100%;padding:16px;margin:10px 0;font-size:22px;font-family:inherit;font-weight:bold;border:none;border-radius:18px;color:#fff}
 .green{background:#2ec4b6}.red{background:#ef476f}.blue{background:#118ab2}.gray{background:#8d99ae}
+.btn.lv.on{background:#ff9f1c}
 .row{display:flex;gap:10px}
 .row .btn{flex:1}
 .stat{font-size:16px;color:#555}
@@ -32,6 +33,11 @@ h1{margin:12px 0 6px;font-size:26px}
 @keyframes pop{50%{transform:scale(1.3) rotate(8deg)}}
 .clap{font-size:90px;background:#ffd166;border:none;border-radius:50%;width:170px;height:170px}
 .count{font-size:60px;font-weight:bold}
+.sent{font-size:36px;line-height:1.6;font-weight:bold;margin-top:8px}
+.wd{display:inline-block;margin:3px 3px;padding:2px 10px;border-radius:14px;background:#e8f7f5;border:none;font:inherit;color:#2b2b2b}
+.wd.hl{background:#ffd166;transform:scale(1.15)}
+.choices{display:flex;gap:10px}
+.choice{flex:1;font-size:56px;background:#fff;border:3px solid #118ab2;border-radius:18px;padding:8px 0}
 </style>
 </head>
 <body>
@@ -40,6 +46,7 @@ h1{margin:12px 0 6px;font-size:26px}
   <button id="t0" class="on" onclick="showTab(0)">👀 Words</button>
   <button id="t1" onclick="showTab(1)">🔤 Spell</button>
   <button id="t2" onclick="showTab(2)">👏 Beats</button>
+  <button id="t3" onclick="showTab(3)">📖 Read</button>
 </div>
 
 <!-- SIGHT WORDS -->
@@ -87,6 +94,30 @@ h1{margin:12px 0 6px;font-size:26px}
   <div class="stat" id="stat2"></div>
 </div>
 
+<!-- READ THE SENTENCE -->
+<div class="game" id="g3">
+  <div class="row">
+    <button class="btn gray lv on" id="lv1" style="font-size:16px;padding:10px" onclick="setLevel(1)">🌱 Easy</button>
+    <button class="btn gray lv" id="lv2" style="font-size:16px;padding:10px" onclick="setLevel(2)">🌳 Medium</button>
+  </div>
+  <div class="card">
+    <div class="emoji" id="seEmoji">📖</div>
+    <div class="sent" id="sentence"></div>
+  </div>
+  <p class="stat" id="seHint">Tap any word to hear it.</p>
+  <button class="btn blue" onclick="readAlong()">🔊 Read it to me</button>
+  <div class="row" id="seActions">
+    <button class="btn red" onclick="sentNotYet()">🔁 Not yet</button>
+    <button class="btn green" onclick="sentDone()">✅ I read it!</button>
+  </div>
+  <div id="seQuiz" style="display:none">
+    <p class="stat" style="font-size:20px"><b>Who is in the sentence?</b></p>
+    <div class="choices" id="choices"></div>
+  </div>
+  <div class="cheer" id="cheer3"></div>
+  <div class="stat" id="stat3"></div>
+</div>
+
 <script>
 // ---------- DATA ----------
 var ANIMALS={cat:'🐱',dog:'🐶',pig:'🐷',hen:'🐔',cow:'🐮',bat:'🦇',fox:'🦊',ant:'🐜',bee:'🐝',rat:'🐀',duck:'🦆',frog:'🐸',fish:'🐟',bird:'🐦',lion:'🦁',bear:'🐻',goat:'🐐',owl:'🦉',horse:'🐴',sheep:'🐑'};
@@ -102,6 +133,19 @@ var SYL=[
  ['octopus','🐙',3,'oc-to-pus'],['gorilla','🦍',3,'go-ril-la'],['crocodile','🐊',3,'croc-o-dile'],
  ['alligator','🐊',4,'al-li-ga-tor'],['hippopotamus','🦛',5,'hip-po-pot-a-mus']
 ];
+// [sentence, animal, level]
+var SENT=[
+ ['The cat can run.','cat',1],['I see a dog.','dog',1],['The pig is big.','pig',1],['A hen is red.','hen',1],
+ ['The cow can eat.','cow',1],['I see a fox.','fox',1],['The duck can go.','duck',1],['A bee can fly.','bee',1],
+ ['The frog can jump.','frog',1],['I see the fish.','fish',1],['A bat is up.','bat',1],['The ant is little.','ant',1],
+ ['We see a bear.','bear',1],['The lion is big.','lion',1],['I like my dog.','dog',1],['The goat can eat.','goat',1],
+ ['The little cat can jump up.','cat',2],['I see a big brown dog.','dog',2],['The pig will play in the mud.','pig',2],
+ ['Where is the red hen?','hen',2],['What can the cow do?','cow',2],['The fox ran to the hill.','fox',2],
+ ['Who can see the duck?','duck',2],['The frog is in the water.','frog',2],['A fish can swim.','fish',2],
+ ['The bird is up in the tree.','bird',2],['The bear will come and eat.','bear',2],['Sam saw a lion at the zoo.','lion',2],
+ ['When can we see the owl?','owl',2],['The sheep said baa.','sheep',2],['That horse can run and jump.','horse',2],
+ ['Sam has a dog and a cat.','dog',2]
+];
 
 // ---------- HELPERS ----------
 function $(id){return document.getElementById(id)}
@@ -111,7 +155,8 @@ function speak(t){try{speechSynthesis.cancel();var u=new SpeechSynthesisUtteranc
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function showTab(n){
-  for(var i=0;i<3;i++){$('g'+i).className='game'+(i==n?' on':'');$('t'+i).className=(i==n?'on':'')}
+  for(var i=0;i<4;i++){$('g'+i).className='game'+(i==n?' on':'');$('t'+i).className=(i==n?'on':'')}
+  if(n===3&&sFirstOpen){sFirstOpen=false;setTimeout(readAlong,300)}
 }
 function popEl(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop')}
 function shakeEl(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')}
@@ -124,7 +169,6 @@ function mastered(){var n=0;CARDS.forEach(function(w){if((scores[w]||0)>=3)n++})
 function nextWord(){
   var learning=CARDS.filter(function(w){return (scores[w]||0)<3&&w!==last});
   var pool=(learning.length&&Math.random()<0.8)?learning:CARDS.filter(function(w){return w!==last});
-  // missed words (score 0) show up more often
   var weighted=[];pool.forEach(function(w){var s=scores[w]||0;var n=s===0?3:(s===1?2:1);for(var i=0;i<n;i++)weighted.push(w)});
   cur=pick(weighted);last=cur;
   $('word').textContent=cur;
@@ -235,8 +279,100 @@ function checkBeats(){
   }
 }
 
+// ---------- GAME 4: READ THE SENTENCE ----------
+var sLevel=load('sLevel',1),sCur=null,sLast=null,sRetry=[],sWins=load('sWins',0),alongTok=0,sFirstOpen=true;
+function cleanWord(w){return w.replace(/[^A-Za-z']/g,'')}
+function setLevel(n){sLevel=n;save('sLevel',n);sRetry=[];sLast=null;newSent(true)}
+function newSent(autoRead){
+  alongTok++;
+  try{speechSynthesis.cancel()}catch(e){}
+  var item=null;
+  if(sRetry.length&&sRetry[0]!==sLast&&Math.random()<0.5){item=sRetry.shift()}
+  if(!item){
+    var pool=SENT.filter(function(s){return s[2]===sLevel&&s!==sLast});
+    item=pick(pool);
+  }
+  sCur=item;sLast=item;
+  $('seEmoji').textContent='📖';
+  var box=$('sentence');box.innerHTML='';
+  item[0].split(' ').forEach(function(w){
+    var b=document.createElement('button');
+    b.className='wd';b.textContent=w;
+    b.onclick=function(){alongTok++;clearHl();speak(cleanWord(w))};
+    box.appendChild(b);
+  });
+  $('seActions').style.display='flex';
+  $('seQuiz').style.display='none';
+  $('cheer3').textContent='';
+  $('seHint').style.display='block';
+  $('stat3').textContent='⭐ Sentences read: '+sWins;
+  $('lv1').className='btn gray lv'+(sLevel==1?' on':'');
+  $('lv2').className='btn gray lv'+(sLevel==2?' on':'');
+  if(autoRead&&$('g3').classList.contains('on'))setTimeout(readAlong,300);
+}
+function clearHl(){
+  var sp=$('sentence').children;
+  for(var i=0;i<sp.length;i++)sp[i].classList.remove('hl');
+}
+function readAlong(){
+  var tok=++alongTok;
+  try{speechSynthesis.cancel()}catch(e){}
+  var spans=$('sentence').children;
+  var i=0;
+  function step(){
+    if(tok!==alongTok)return;
+    clearHl();
+    if(i>=spans.length)return;
+    spans[i].classList.add('hl');
+    var done=false;
+    function next(){if(done||tok!==alongTok)return;done=true;i++;setTimeout(step,120)}
+    try{
+      var u=new SpeechSynthesisUtterance(cleanWord(spans[i].textContent));
+      u.rate=0.7;u.pitch=1.1;u.onend=next;u.onerror=next;
+      speechSynthesis.speak(u);
+    }catch(e){}
+    setTimeout(next,2000);
+  }
+  setTimeout(step,150);
+}
+function sentNotYet(){
+  sRetry.push(sCur);
+  $('cheer3').textContent="That's okay! We'll try it again.";
+  setTimeout(function(){newSent(true)},1300);
+}
+function sentDone(){
+  alongTok++;try{speechSynthesis.cancel()}catch(e){}
+  clearHl();
+  $('seActions').style.display='none';
+  $('seHint').style.display='none';
+  var others=shuffle(Object.keys(ANIMALS).filter(function(k){return k!==sCur[1]})).slice(0,2);
+  var opts=shuffle([sCur[1]].concat(others));
+  var box=$('choices');box.innerHTML='';
+  opts.forEach(function(k){
+    var b=document.createElement('button');
+    b.className='choice';b.textContent=ANIMALS[k];
+    b.onclick=function(){pickChoice(k,b)};
+    box.appendChild(b);
+  });
+  $('seQuiz').style.display='block';
+}
+function pickChoice(k,btn){
+  if(k===sCur[1]){
+    sWins++;save('sWins',sWins);
+    $('seEmoji').textContent=ANIMALS[k];popEl($('seEmoji'));
+    $('cheer3').textContent=pick(PRAISE)+' It is the '+k+'!';
+    $('stat3').textContent='⭐ Sentences read: '+sWins;
+    var bs=$('choices').children;for(var i=0;i<bs.length;i++)bs[i].disabled=true;
+    speak('Great job! The '+k);
+    setTimeout(function(){newSent(true)},2600);
+  }else{
+    shakeEl(btn);
+    $('cheer3').textContent='Try again! Read the sentence slowly.';
+  }
+}
+
 // ---------- START ----------
-nextWord();newSpell();newSy();
+nextWord();newSpell();newSy();newSent(false);
 </script>
 </body>
 </html>
