@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animal Readers</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Comic Sans MS","Trebuchet MS",sans-serif;background:#fff6d6;color:#2b2b2b;text-align:center}
+h1{margin:12px 0 6px;font-size:26px}
+.tabs{display:flex;gap:6px;justify-content:center;padding:6px}
+.tabs button{flex:1;max-width:140px;padding:12px 4px;font-size:16px;border:3px solid #ff9f1c;background:#fff;border-radius:16px;font-family:inherit;font-weight:bold}
+.tabs button.on{background:#ff9f1c;color:#fff}
+.game{display:none;padding:10px 14px 40px;max-width:480px;margin:0 auto}
+.game.on{display:block}
+.card{background:#fff;border:4px solid #2ec4b6;border-radius:28px;padding:22px 10px;margin:12px 0}
+.big{font-size:72px;font-weight:bold;letter-spacing:2px;word-break:break-all}
+.emoji{font-size:80px;line-height:1.1}
+.btn{display:block;width:100%;padding:16px;margin:10px 0;font-size:22px;font-family:inherit;font-weight:bold;border:none;border-radius:18px;color:#fff}
+.green{background:#2ec4b6}.red{background:#ef476f}.blue{background:#118ab2}.gray{background:#8d99ae}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
+.stat{font-size:16px;color:#555}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.tile{width:62px;height:62px;font-size:36px;font-weight:bold;font-family:inherit;border:3px solid #118ab2;background:#fff;border-radius:14px;text-transform:lowercase}
+.tile.used{opacity:.25}
+.slot{width:56px;height:62px;border-bottom:5px solid #ff9f1c;font-size:38px;font-weight:bold;display:inline-block;margin:0 4px;text-transform:lowercase}
+.cheer{font-size:28px;min-height:40px;font-weight:bold;color:#2ec4b6}
+.shake{animation:sh .4s}
+@keyframes sh{20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-10px)}80%{transform:translateX(10px)}}
+.pop{animation:pop .5s}
+@keyframes pop{50%{transform:scale(1.3) rotate(8deg)}}
+.clap{font-size:90px;background:#ffd166;border:none;border-radius:50%;width:170px;height:170px}
+.count{font-size:60px;font-weight:bold}
+</style>
+</head>
+<body>
+<h1>🦁 Animal Readers 🐸</h1>
+<div class="tabs">
+  <button id="t0" class="on" onclick="showTab(0)">👀 Words</button>
+  <button id="t1" onclick="showTab(1)">🔤 Spell</button>
+  <button id="t2" onclick="showTab(2)">👏 Beats</button>
+</div>
+
+<!-- SIGHT WORDS -->
+<div class="game on" id="g0">
+  <div class="card">
+    <div class="emoji" id="cheerAnimal">🦁</div>
+    <div class="big" id="word">the</div>
+  </div>
+  <button class="btn blue" onclick="sayWord()">🔊 Hear it</button>
+  <div class="row">
+    <button class="btn red" onclick="answerWord(false)">🔁 Not yet</button>
+    <button class="btn green" onclick="answerWord(true)">✅ I got it!</button>
+  </div>
+  <div class="cheer" id="cheer0"></div>
+  <div class="stat" id="stat0"></div>
+  <button class="btn gray" style="font-size:14px;padding:8px" onclick="resetWords()">Start words over</button>
+</div>
+
+<!-- SPELLING -->
+<div class="game" id="g1">
+  <div class="card">
+    <div class="emoji" id="spEmoji">🐱</div>
+    <div id="slots" style="margin-top:10px"></div>
+  </div>
+  <button class="btn blue" onclick="saySpell()">🔊 Hear it</button>
+  <div class="tiles" id="tiles"></div>
+  <button class="btn gray" onclick="clearSpell()">↩️ Try again</button>
+  <div class="cheer" id="cheer1"></div>
+  <div class="stat" id="stat1"></div>
+</div>
+
+<!-- SYLLABLES -->
+<div class="game" id="g2">
+  <div class="card">
+    <div class="emoji" id="syEmoji">🐘</div>
+    <div class="big" style="font-size:46px" id="syWord">elephant</div>
+  </div>
+  <button class="btn blue" onclick="saySy()">🔊 Hear it</button>
+  <p class="stat">Say it slowly. Tap once for each beat!</p>
+  <button class="clap" id="clapBtn" onclick="tapBeat()">👏</button>
+  <div class="count" id="beats">0</div>
+  <button class="btn green" onclick="checkBeats()">Check ✔️</button>
+  <button class="btn gray" onclick="resetBeats()">↩️ Start over</button>
+  <div class="cheer" id="cheer2"></div>
+  <div class="stat" id="stat2"></div>
+</div>
+
+<script>
+// ---------- DATA ----------
+var ANIMALS={cat:'🐱',dog:'🐶',pig:'🐷',hen:'🐔',cow:'🐮',bat:'🦇',fox:'🦊',ant:'🐜',bee:'🐝',rat:'🐀',duck:'🦆',frog:'🐸',fish:'🐟',bird:'🐦',lion:'🦁',bear:'🐻',goat:'🐐',owl:'🦉',horse:'🐴',sheep:'🐑'};
+var SIGHT=("a and away big blue can come down find for funny go help here I in is it jump little look make me my not one play red run said see the three to two up we where yellow you all am are at ate be black brown but came did do eat four get good have he into like must new no now on our out please pretty ran ride saw say she so soon that there they this too under want was well went what white who will with yes when Sam").split(" ");
+var CHEERERS=['🦁','🐯','🐸','🐵','🐼','🐰','🐻','🦊','🐮','🐷','🐧','🦉'];
+var PRAISE=["Great job!","You got it!","Roar-some!","Wow, nice!","Super reader!","Amazing!","Hooray!"];
+var SYL=[
+ ['cat','🐱',1,'cat'],['dog','🐶',1,'dog'],['pig','🐷',1,'pig'],['horse','🐴',1,'horse'],['fish','🐟',1,'fish'],
+ ['tiger','🐯',2,'ti-ger'],['zebra','🦓',2,'ze-bra'],['monkey','🐵',2,'mon-key'],['rabbit','🐰',2,'rab-bit'],
+ ['penguin','🐧',2,'pen-guin'],['giraffe','🦒',2,'gi-raffe'],['dolphin','🐬',2,'dol-phin'],['chicken','🐔',2,'chick-en'],
+ ['panda','🐼',2,'pan-da'],['turkey','🦃',2,'tur-key'],
+ ['elephant','🐘',3,'el-e-phant'],['butterfly','🦋',3,'but-ter-fly'],['kangaroo','🦘',3,'kan-ga-roo'],
+ ['octopus','🐙',3,'oc-to-pus'],['gorilla','🦍',3,'go-ril-la'],['crocodile','🐊',3,'croc-o-dile'],
+ ['alligator','🐊',4,'al-li-ga-tor'],['hippopotamus','🦛',5,'hip-po-pot-a-mus']
+];
+
+// ---------- HELPERS ----------
+function $(id){return document.getElementById(id)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function speak(t){try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=0.75;u.pitch=1.1;speechSynthesis.speak(u)}catch(e){}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function showTab(n){
+  for(var i=0;i<3;i++){$('g'+i).className='game'+(i==n?' on':'');$('t'+i).className=(i==n?'on':'')}
+}
+function popEl(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop')}
+function shakeEl(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')}
+
+// ---------- GAME 1: SIGHT WORDS ----------
+var CARDS=SIGHT.concat(Object.keys(ANIMALS));
+var scores=load('scores',{});
+var cur='',last='';
+function mastered(){var n=0;CARDS.forEach(function(w){if((scores[w]||0)>=3)n++});return n}
+function nextWord(){
+  var learning=CARDS.filter(function(w){return (scores[w]||0)<3&&w!==last});
+  var pool=(learning.length&&Math.random()<0.8)?learning:CARDS.filter(function(w){return w!==last});
+  // missed words (score 0) show up more often
+  var weighted=[];pool.forEach(function(w){var s=scores[w]||0;var n=s===0?3:(s===1?2:1);for(var i=0;i<n;i++)weighted.push(w)});
+  cur=pick(weighted);last=cur;
+  $('word').textContent=cur;
+  $('cheerAnimal').textContent=pick(CHEERERS);
+  $('cheer0').textContent='';
+  $('stat0').textContent='⭐ Mastered: '+mastered()+' of '+CARDS.length;
+  setTimeout(sayWord,250);
+}
+function sayWord(){speak(cur)}
+function answerWord(ok){
+  scores[cur]=ok?Math.min(5,(scores[cur]||0)+1):0;
+  save('scores',scores);
+  if(ok){
+    $('cheer0').textContent=pick(PRAISE);
+    if(ANIMALS[cur])$('cheerAnimal').textContent=ANIMALS[cur];
+    popEl($('cheerAnimal'));
+    speak('Great job!');
+    setTimeout(nextWord,1100);
+  }else{
+    $('cheer0').textContent="That's okay! You'll see it again.";
+    shakeEl($('word'));
+    setTimeout(nextWord,1300);
+  }
+}
+function resetWords(){if(confirm('Start all the words over?')){scores={};save('scores',scores);nextWord()}}
+
+// ---------- GAME 2: SPELLING ----------
+var SPELL=Object.keys(ANIMALS);
+var spWord='',spLast='',spTiles=[],spAnswer=[],spWins=load('spWins',0);
+function newSpell(){
+  do{spWord=pick(SPELL)}while(spWord===spLast);
+  spLast=spWord;
+  $('spEmoji').textContent=ANIMALS[spWord];
+  var letters=spWord.split(''),sh;
+  do{sh=shuffle(letters)}while(sh.join('')===spWord&&spWord.length>1);
+  spTiles=sh.map(function(c){return {ch:c,used:false}});
+  spAnswer=[];
+  $('cheer1').textContent='';
+  renderSpell();
+  $('stat1').textContent='⭐ Words spelled: '+spWins;
+  setTimeout(saySpell,250);
+}
+function saySpell(){speak(spWord)}
+function renderSpell(){
+  var s='';
+  for(var i=0;i<spWord.length;i++){s+='<span class="slot">'+(spAnswer[i]?spAnswer[i].ch:'')+'</span>'}
+  $('slots').innerHTML=s;
+  var t=$('tiles');t.innerHTML='';
+  spTiles.forEach(function(tl,idx){
+    var b=document.createElement('button');
+    b.className='tile'+(tl.used?' used':'');
+    b.textContent=tl.ch;
+    b.onclick=function(){tapTile(idx)};
+    t.appendChild(b);
+  });
+}
+function tapTile(i){
+  if(spTiles[i].used||spAnswer.length>=spWord.length)return;
+  spTiles[i].used=true;spAnswer.push({ch:spTiles[i].ch,idx:i});
+  speak(spTiles[i].ch);
+  renderSpell();
+  if(spAnswer.length===spWord.length){
+    var made=spAnswer.map(function(a){return a.ch}).join('');
+    if(made===spWord){
+      spWins++;save('spWins',spWins);
+      $('cheer1').textContent=pick(PRAISE)+' '+spWord+'!';
+      popEl($('spEmoji'));
+      setTimeout(function(){speak('Great job! '+spWord)},400);
+      setTimeout(newSpell,2200);
+    }else{
+      $('cheer1').textContent='Almost! Try again.';
+      shakeEl($('slots'));
+      setTimeout(clearSpell,900);
+    }
+  }
+}
+function clearSpell(){
+  spTiles.forEach(function(t){t.used=false});spAnswer=[];
+  $('cheer1').textContent='';renderSpell();
+}
+
+// ---------- GAME 3: SYLLABLES ----------
+var syCur=null,syLast=null,beats=0,syWins=load('syWins',0);
+function newSy(){
+  do{syCur=pick(SYL)}while(syCur===syLast);
+  syLast=syCur;beats=0;
+  $('syEmoji').textContent=syCur[1];
+  $('syWord').textContent=syCur[0];
+  $('beats').textContent='0';
+  $('cheer2').textContent='';
+  $('stat2').textContent='⭐ Beats mastered: '+syWins;
+  setTimeout(saySy,250);
+}
+function saySy(){speak(syCur[0])}
+function tapBeat(){beats++;$('beats').textContent=beats;popEl($('clapBtn'))}
+function resetBeats(){beats=0;$('beats').textContent='0';$('cheer2').textContent=''}
+function checkBeats(){
+  if(beats===syCur[2]){
+    syWins++;save('syWins',syWins);
+    $('syWord').textContent=syCur[3];
+    $('cheer2').textContent=pick(PRAISE)+' '+syCur[2]+(syCur[2]===1?' beat!':' beats!');
+    popEl($('syEmoji'));speak('Great job!');
+    setTimeout(newSy,2600);
+  }else{
+    $('cheer2').textContent='Not quite. Say it slow and try again!';
+    shakeEl($('beats'));
+    setTimeout(function(){resetBeats();saySy()},1400);
+  }
+}
+
+// ---------- START ----------
+nextWord();newSpell();newSy();
+</script>
+</body>
+</html>
